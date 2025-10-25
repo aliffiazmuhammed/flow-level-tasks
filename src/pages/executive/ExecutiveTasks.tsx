@@ -106,6 +106,27 @@ const ExecutiveTasks = () => {
   };
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
+    // Check if trying to complete the task
+    if (newStatus === 'completed') {
+      const { data: taskSubtasks } = await supabase
+        .from('subtasks')
+        .select('status')
+        .eq('task_id', taskId);
+
+      const hasIncompletSubtasks = taskSubtasks?.some(
+        (subtask) => subtask.status !== 'completed'
+      );
+
+      if (hasIncompletSubtasks) {
+        toast({
+          title: "Cannot Complete Task",
+          description: "Please complete all subtasks before marking the task as complete",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from('tasks')
       .update({ status: newStatus as any })
