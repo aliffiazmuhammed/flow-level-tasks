@@ -13,6 +13,12 @@ const ExecutiveDashboard = () => {
     pending: 0,
     inProgress: 0,
     completed: 0,
+    subtasks: {
+      total: 0,
+      pending: 0,
+      inProgress: 0,
+      completed: 0,
+    }
   });
   const navigate = useNavigate();
 
@@ -25,8 +31,15 @@ const ExecutiveDashboard = () => {
 
     const { data: tasks } = await supabase
       .from('tasks')
-      .select('status')
+      .select('id, status')
       .eq('delegated_to', user?.id);
+
+    // Fetch subtasks for all tasks
+    const taskIds = tasks?.map(t => t.id) || [];
+    const { data: subtasks } = await supabase
+      .from('subtasks')
+      .select('status')
+      .in('task_id', taskIds);
 
     if (tasks) {
       setStats({
@@ -34,6 +47,12 @@ const ExecutiveDashboard = () => {
         pending: tasks.filter(t => t.status === 'pending').length,
         inProgress: tasks.filter(t => t.status === 'in_progress').length,
         completed: tasks.filter(t => t.status === 'completed').length,
+        subtasks: {
+          total: subtasks?.length || 0,
+          pending: subtasks?.filter(s => s.status === 'pending').length || 0,
+          inProgress: subtasks?.filter(s => s.status === 'in_progress').length || 0,
+          completed: subtasks?.filter(s => s.status === 'completed').length || 0,
+        }
       });
     }
   };
@@ -82,6 +101,28 @@ const ExecutiveDashboard = () => {
             </motion.div>
           ))}
         </div>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Subtasks Overview</h2>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">Total Subtasks</p>
+              <p className="text-2xl font-bold mt-1">{stats.subtasks.total}</p>
+            </div>
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">Pending</p>
+              <p className="text-2xl font-bold mt-1 text-yellow-500">{stats.subtasks.pending}</p>
+            </div>
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">In Progress</p>
+              <p className="text-2xl font-bold mt-1 text-blue-500">{stats.subtasks.inProgress}</p>
+            </div>
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">Completed</p>
+              <p className="text-2xl font-bold mt-1 text-green-500">{stats.subtasks.completed}</p>
+            </div>
+          </div>
+        </Card>
 
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
