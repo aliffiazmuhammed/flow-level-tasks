@@ -29,11 +29,11 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      {/* Sidebar */}
+      {/* Sidebar - Fixed */}
       <motion.aside 
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        className="w-64 border-r border-border bg-card"
+        className="fixed left-0 top-0 h-screen w-64 border-r border-border bg-card z-50"
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
@@ -45,7 +45,7 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-4">
+          <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
             {getNavItems().map((item) => (
               <NavLink
                 key={item.path}
@@ -78,8 +78,8 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         </div>
       </motion.aside>
 
-      {/* Main Content */}
-      <main className="flex-1">
+      {/* Main Content - Scrollable with left margin */}
+      <main className="flex-1 ml-64 h-screen overflow-y-auto">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
