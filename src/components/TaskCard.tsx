@@ -13,6 +13,7 @@ interface TaskCardProps {
     priority: string;
     status: string;
     deadline: string | null;
+    task_type?: string;
     assigned_to_profile?: {
       name: string;
       email: string;
@@ -48,6 +49,11 @@ export const TaskCard = ({
     completed: "bg-green-500/10 text-green-500 border-green-500/20",
   };
 
+  const typeColors = {
+    ad_hoc: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+    strategic: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -65,6 +71,11 @@ export const TaskCard = ({
             )}
           </div>
           <div className="flex gap-2">
+            {task.task_type && (
+              <Badge className={typeColors[task.task_type as keyof typeof typeColors]}>
+                {task.task_type.replace('_', ' ')}
+              </Badge>
+            )}
             <Badge className={priorityColors[task.priority as keyof typeof priorityColors]}>
               {task.priority}
             </Badge>

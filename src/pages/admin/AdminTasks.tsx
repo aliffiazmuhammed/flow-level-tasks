@@ -22,6 +22,7 @@ const taskSchema = z.object({
   priority: z.enum(["low", "medium", "high", "urgent"]),
   deadline: z.string().optional(),
   assigned_to: z.string().uuid("Please select a department head"),
+  task_type: z.enum(["ad_hoc", "strategic"]),
 });
 
 const AdminTasks = () => {
@@ -46,6 +47,7 @@ const AdminTasks = () => {
     priority: "medium",
     deadline: "",
     assigned_to: "",
+    task_type: "ad_hoc",
   });
 
   useEffect(() => {
@@ -113,6 +115,7 @@ const AdminTasks = () => {
         assigned_to: formData.assigned_to,
         created_by: user?.id,
         status: 'pending' as any,
+        task_type: formData.task_type as any,
       }]);
 
     if (error) {
@@ -133,6 +136,7 @@ const AdminTasks = () => {
         priority: "medium",
         deadline: "",
         assigned_to: "",
+        task_type: "ad_hoc",
       });
       fetchTasks();
     }
@@ -297,6 +301,22 @@ const AdminTasks = () => {
                     placeholder="Enter task description"
                     rows={4}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="task_type">Task Type</Label>
+                  <Select
+                    value={formData.task_type}
+                    onValueChange={(value) => setFormData({ ...formData, task_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ad_hoc">Ad Hoc</SelectItem>
+                      <SelectItem value="strategic">Strategic</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">

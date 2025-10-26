@@ -178,6 +178,7 @@ export type Database = {
           id: string
           priority: Database["public"]["Enums"]["task_priority"]
           status: Database["public"]["Enums"]["task_status"]
+          task_type: Database["public"]["Enums"]["task_type"]
           title: string
           updated_at: string
         }
@@ -191,6 +192,7 @@ export type Database = {
           id?: string
           priority?: Database["public"]["Enums"]["task_priority"]
           status?: Database["public"]["Enums"]["task_status"]
+          task_type?: Database["public"]["Enums"]["task_type"]
           title: string
           updated_at?: string
         }
@@ -204,6 +206,7 @@ export type Database = {
           id?: string
           priority?: Database["public"]["Enums"]["task_priority"]
           status?: Database["public"]["Enums"]["task_status"]
+          task_type?: Database["public"]["Enums"]["task_type"]
           title?: string
           updated_at?: string
         }
@@ -241,6 +244,7 @@ export type Database = {
     Enums: {
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "pending" | "in_progress" | "completed"
+      task_type: "ad_hoc" | "strategic"
       user_role: "admin" | "department_head" | "executive"
     }
     CompositeTypes: {
@@ -371,6 +375,7 @@ export const Constants = {
     Enums: {
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["pending", "in_progress", "completed"],
+      task_type: ["ad_hoc", "strategic"],
       user_role: ["admin", "department_head", "executive"],
     },
   },
