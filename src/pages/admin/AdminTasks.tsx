@@ -392,25 +392,25 @@ const AdminTasks = () => {
 
           <TabsContent value="all" className="space-y-4">
             {filterTasks().map((task) => (
-              <TaskCard key={task.id} task={task} onViewDetails={handleViewDetails} showActions={false} />
+              <TaskCard key={task.id} task={task} onViewDetails={handleViewDetails} />
             ))}
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
             {filterTasks('pending').map((task) => (
-              <TaskCard key={task.id} task={task} onViewDetails={handleViewDetails} showActions={false} />
+              <TaskCard key={task.id} task={task} onViewDetails={handleViewDetails} />
             ))}
           </TabsContent>
 
           <TabsContent value="in_progress" className="space-y-4">
             {filterTasks('in_progress').map((task) => (
-              <TaskCard key={task.id} task={task} onViewDetails={handleViewDetails} showActions={false} />
+              <TaskCard key={task.id} task={task} onViewDetails={handleViewDetails} />
             ))}
           </TabsContent>
 
           <TabsContent value="completed" className="space-y-4">
             {filterTasks('completed').map((task) => (
-              <TaskCard key={task.id} task={task} onViewDetails={handleViewDetails} showActions={false} />
+              <TaskCard key={task.id} task={task} onViewDetails={handleViewDetails} />
             ))}
           </TabsContent>
         </Tabs>
