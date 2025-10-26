@@ -83,13 +83,28 @@ const ExecutiveTasks = () => {
   };
 
   const fetchSubtasks = async (taskId: string) => {
-    const { data } = await supabase
+    const { data: subtasksData } = await supabase
       .from('subtasks')
       .select('*')
       .eq('task_id', taskId)
       .order('created_at', { ascending: false });
 
-    setSubtasks(data || []);
+    if (subtasksData) {
+      // Fetch comment counts for each subtask
+      const subtasksWithCounts = await Promise.all(
+        subtasksData.map(async (subtask) => {
+          const { count } = await supabase
+            .from('subtask_comments')
+            .select('*', { count: 'exact', head: true })
+            .eq('subtask_id', subtask.id);
+          
+          return { ...subtask, commentCount: count || 0 };
+        })
+      );
+      setSubtasks(subtasksWithCounts);
+    } else {
+      setSubtasks([]);
+    }
   };
 
   const fetchSubtaskComments = async (subtaskId: string) => {
@@ -266,6 +281,10 @@ const ExecutiveTasks = () => {
       });
       setSubtaskComment("");
       fetchSubtaskComments(selectedSubtask.id);
+      // Refresh subtasks to update comment count
+      if (selectedTask) {
+        fetchSubtasks(selectedTask.id);
+      }
     }
   };
 
@@ -406,6 +425,7 @@ const ExecutiveTasks = () => {
                           subtask={subtask}
                           onStatusChange={handleSubtaskStatusChange}
                           onViewComments={handleViewSubtaskComments}
+                          commentCount={subtask.commentCount}
                         />
                       ))
                     )}
