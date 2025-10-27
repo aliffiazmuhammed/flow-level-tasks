@@ -112,6 +112,9 @@ export default {
         "gradient-secondary": "var(--gradient-secondary)",
       },
       boxShadow: {
+        "soft": "var(--shadow-soft)",
+        "medium": "var(--shadow-medium)",
+        "large": "var(--shadow-large)",
         "glow": "var(--shadow-glow)",
       },
     },
