@@ -4,16 +4,18 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Plus, TrendingUp, CheckCircle2, Clock, AlertCircle, Users, BarChart3 } from "lucide-react";
+import { Plus, TrendingUp, CheckCircle2, Clock, AlertCircle, ListChecks, Loader2, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -25,13 +27,25 @@ const AdminDashboard = () => {
   const [overdueActiveTasks, setOverdueActiveTasks] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [taskTrends, setTaskTrends] = useState<any[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     fetchStats();
     fetchOverdueActiveTasks();
     fetchRecentActivity();
     fetchTaskTrends();
-  }, []);
+    fetchUserProfile();
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    setUserProfile(data);
+  };
 
   const fetchStats = async () => {
     const { data: tasks } = await supabase
@@ -105,171 +119,278 @@ const AdminDashboard = () => {
 
   return (
     <DashboardLayout role="admin">
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="space-y-8 p-8">
+        {/* Modern Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
+          className="flex items-start justify-between"
         >
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Monitor and manage your tickets, resources, and logistics
-            </p>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm">{format(new Date(), 'EEEE, MMMM dd, yyyy')}</span>
+            </div>
           </div>
-          <Button onClick={() => navigate('/admin/tasks')} className="gap-2 rounded-2xl shadow-medium">
-            <Plus className="h-4 w-4" />
-            Create Ticket
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={() => navigate('/admin/tasks')} 
+              className="gap-2 rounded-xl shadow-soft bg-primary hover:bg-primary/90 transition-all"
+              size="lg"
+            >
+              <Plus className="h-4 w-4" />
+              Create Task
+            </Button>
+            <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+              <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                {userProfile?.name?.substring(0, 2).toUpperCase() || 'AD'}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </motion.div>
 
-        {/* Key Metrics Grid - Top Row */}
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Total Tickets Initiated (YTD) - Line Chart */}
+        {/* Key Metrics Cards */}
+        <div className="grid gap-6 md:grid-cols-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="shadow-soft rounded-2xl border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Total Tickets Initiated (YTD)
-                </CardTitle>
-                <CardDescription className="text-xs">Strategic and Ad-hoc tickets over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={taskTrends}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem' }} />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="strategic" 
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={2}
-                      dot={{ fill: 'hsl(var(--primary))' }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="adhoc" 
-                      stroke="hsl(var(--secondary))" 
-                      strokeWidth={2}
-                      dot={{ fill: 'hsl(var(--secondary))' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-                <div className="mt-4 text-center">
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-xs text-muted-foreground">Total Tickets This Year</p>
+            <Card className="relative overflow-hidden border-none shadow-soft hover:shadow-medium transition-all duration-300 group">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <ListChecks className="h-6 w-6 text-primary" />
+                  </div>
+                  <TrendingUp className="h-4 w-4 text-accent" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Total Tickets</p>
+                  <p className="text-3xl font-bold">{stats.total}</p>
+                </div>
+                <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary w-full"></div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Ticket Completion Rate - Progress Bars */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="shadow-soft rounded-2xl border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <CheckCircle2 className="h-5 w-5 text-accent" />
-                  Ticket Completion Rate
-                </CardTitle>
-                <CardDescription className="text-xs">Current status breakdown</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Completed</span>
-                    <span className="font-semibold text-accent">{stats.completed}</span>
+            <Card className="relative overflow-hidden border-none shadow-soft hover:shadow-medium transition-all duration-300 group">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                    <CheckCircle2 className="h-6 w-6 text-accent" />
                   </div>
-                  <Progress value={(stats.completed / stats.total) * 100} className="h-3 bg-muted" />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {((stats.completed / stats.total) * 100).toFixed(1)}%
-                  </p>
+                  <span className="text-xs font-medium text-accent">
+                    {((stats.completed / stats.total) * 100).toFixed(0)}%
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">In Progress</span>
-                    <span className="font-semibold text-secondary">{stats.inProgress}</span>
-                  </div>
-                  <Progress value={(stats.inProgress / stats.total) * 100} className="h-3 bg-muted" />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {((stats.inProgress / stats.total) * 100).toFixed(1)}%
-                  </p>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                  <p className="text-3xl font-bold">{stats.completed}</p>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Pending</span>
-                    <span className="font-semibold text-primary">{stats.pending}</span>
-                  </div>
-                  <Progress value={(stats.pending / stats.total) * 100} className="h-3 bg-muted" />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {((stats.pending / stats.total) * 100).toFixed(1)}%
-                  </p>
+                <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-accent transition-all duration-500" 
+                    style={{ width: `${(stats.completed / stats.total) * 100}%` }}
+                  ></div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Tickets by Type & Status - Donut Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="shadow-soft rounded-2xl border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <BarChart3 className="h-5 w-5 text-secondary" />
-                  Tickets by Type & Status
+            <Card className="relative overflow-hidden border-none shadow-soft hover:shadow-medium transition-all duration-300 group">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
+                    <Loader2 className="h-6 w-6 text-secondary" />
+                  </div>
+                  <span className="text-xs font-medium text-secondary">
+                    {((stats.inProgress / stats.total) * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">In Progress</p>
+                  <p className="text-3xl font-bold">{stats.inProgress}</p>
+                </div>
+                <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-secondary transition-all duration-500" 
+                    style={{ width: `${(stats.inProgress / stats.total) * 100}%` }}
+                  ></div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="relative overflow-hidden border-none shadow-soft hover:shadow-medium transition-all duration-300 group">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-muted group-hover:bg-muted/80 transition-colors">
+                    <Clock className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {((stats.pending / stats.total) * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                  <p className="text-3xl font-bold">{stats.pending}</p>
+                </div>
+                <div className="mt-4 h-1 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-muted-foreground transition-all duration-500" 
+                    style={{ width: `${(stats.pending / stats.total) * 100}%` }}
+                  ></div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Ticket Insights Section */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Total Tickets Trend */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Card className="border-none shadow-soft hover:shadow-medium transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Tickets Trend (YTD)
                 </CardTitle>
-                <CardDescription className="text-xs">Category distribution</CardDescription>
+                <CardDescription>Strategic vs Ad-hoc tickets over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={taskTrends}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))', 
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }} 
+                    />
+                    <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '20px' }} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="strategic" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={3}
+                      dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="adhoc" 
+                      stroke="hsl(var(--secondary))" 
+                      strokeWidth={3}
+                      dot={{ fill: 'hsl(var(--secondary))', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Tickets by Type Distribution */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Card className="border-none shadow-soft hover:shadow-medium transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <CheckCircle2 className="h-5 w-5 text-accent" />
+                  Completion Breakdown
+                </CardTitle>
+                <CardDescription>Current status distribution</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'Strategic', value: stats.strategic },
-                        { name: 'Ad-hoc', value: stats.adhoc }
+                        { name: 'Completed', value: stats.completed, color: 'hsl(var(--accent))' },
+                        { name: 'In Progress', value: stats.inProgress, color: 'hsl(var(--secondary))' },
+                        { name: 'Pending', value: stats.pending, color: 'hsl(var(--muted-foreground))' }
                       ]}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={70}
-                      paddingAngle={5}
+                      innerRadius={70}
+                      outerRadius={110}
+                      paddingAngle={3}
                       dataKey="value"
                     >
-                      <Cell fill="hsl(var(--primary))" />
+                      <Cell fill="hsl(var(--accent))" />
                       <Cell fill="hsl(var(--secondary))" />
+                      <Cell fill="hsl(var(--muted-foreground))" />
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0.5rem', fontSize: '12px' }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))', 
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }} 
+                    />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-primary"></div>
-                      <span className="text-muted-foreground">Strategic</span>
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-accent/10">
+                    <div className="flex items-center gap-3">
+                      <div className="h-3 w-3 rounded-full bg-accent"></div>
+                      <span className="text-sm font-medium">Completed</span>
                     </div>
-                    <span className="font-semibold">{stats.strategic}</span>
+                    <span className="text-sm font-bold">{stats.completed}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/10">
+                    <div className="flex items-center gap-3">
                       <div className="h-3 w-3 rounded-full bg-secondary"></div>
-                      <span className="text-muted-foreground">Ad-hoc</span>
+                      <span className="text-sm font-medium">In Progress</span>
                     </div>
-                    <span className="font-semibold">{stats.adhoc}</span>
+                    <span className="text-sm font-bold">{stats.inProgress}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                    <div className="flex items-center gap-3">
+                      <div className="h-3 w-3 rounded-full bg-muted-foreground"></div>
+                      <span className="text-sm font-medium">Pending</span>
+                    </div>
+                    <span className="text-sm font-bold">{stats.pending}</span>
                   </div>
                 </div>
               </CardContent>
@@ -277,54 +398,62 @@ const AdminDashboard = () => {
           </motion.div>
         </div>
 
-        {/* Middle Row - Overdue Tasks & Activity */}
+        {/* Overdue Tickets & Activity Timeline */}
         <div className="grid gap-6 md:grid-cols-3">
-          {/* Top 5 Overdue Strategic Tickets */}
+          {/* Top 5 Overdue Tickets */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.7 }}
             className="col-span-2"
           >
-            <Card className="shadow-soft rounded-2xl border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <Card className="border-none shadow-soft hover:shadow-medium transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
                   <AlertCircle className="h-5 w-5 text-destructive" />
-                  Top 5 Overdue Strategic Tickets
+                  Overdue & Active Tickets
                 </CardTitle>
-                <CardDescription className="text-xs">Tickets requiring immediate attention</CardDescription>
+                <CardDescription>Tickets requiring immediate attention</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {overdueActiveTasks.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8 text-sm">No overdue or active tickets</p>
+                    <div className="text-center py-12">
+                      <CheckCircle2 className="h-12 w-12 text-accent mx-auto mb-3 opacity-50" />
+                      <p className="text-muted-foreground">All caught up! No overdue tickets.</p>
+                    </div>
                   ) : (
                     overdueActiveTasks.map((task: any) => (
-                      <div key={task.id} className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl hover:bg-muted/50 transition-all">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      <div 
+                        key={task.id} 
+                        className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-destructive/5 to-transparent border border-destructive/10 hover:border-destructive/30 transition-all cursor-pointer group"
+                      >
+                        <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold">
                             {task.profiles?.name?.substring(0, 2).toUpperCase() || 'UN'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-sm truncate">{task.title}</h4>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <h4 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                              {task.title}
+                            </h4>
                             <Badge 
                               variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'}
-                              className="text-xs"
+                              className="text-xs px-2 py-0.5"
                             >
                               {task.priority}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1.5">
+                              <div className="h-1.5 w-1.5 rounded-full bg-current"></div>
                               {task.profiles?.name || 'Unassigned'}
                             </span>
                             {task.deadline && (
-                              <span className="flex items-center gap-1 text-destructive">
-                                <Clock className="h-3 w-3" />
-                                {format(new Date(task.deadline), 'MMM dd, yyyy')}
+                              <span className="flex items-center gap-1.5 text-destructive font-medium">
+                                <Clock className="h-3.5 w-3.5" />
+                                Due {format(new Date(task.deadline), 'MMM dd')}
                               </span>
                             )}
                           </div>
@@ -337,36 +466,41 @@ const AdminDashboard = () => {
             </Card>
           </motion.div>
 
-          {/* Activity Timeline / Live Feed */}
+          {/* Activity Timeline */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.8 }}
           >
-            <Card className="shadow-soft rounded-2xl border-border h-full">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <Card className="border-none shadow-soft hover:shadow-medium transition-all duration-300 h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
                   <Clock className="h-5 w-5 text-secondary" />
-                  Activity Timeline
+                  Recent Activity
                 </CardTitle>
-                <CardDescription className="text-xs">Recent updates and actions</CardDescription>
+                <CardDescription>Live updates feed</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {recentActivity.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8 text-sm">No recent activity</p>
+                    <div className="text-center py-12">
+                      <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-30" />
+                      <p className="text-muted-foreground text-sm">No recent activity</p>
+                    </div>
                   ) : (
-                    recentActivity.map((activity: any, index: number) => (
-                      <div key={activity.id} className="relative pl-6 pb-4 border-l-2 border-muted last:border-l-0">
-                        <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary border-4 border-background"></div>
-                        <div className="space-y-1">
+                    recentActivity.map((activity: any) => (
+                      <div key={activity.id} className="relative pl-7 pb-5 border-l-2 border-border last:border-l-0 last:pb-0 group">
+                        <div className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-background group-hover:scale-125 transition-transform"></div>
+                        <div className="space-y-1.5 bg-muted/30 p-3 rounded-lg group-hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-1.5 text-xs">
-                            <span className="font-semibold">{activity.profiles?.name}</span>
-                            <span className="text-muted-foreground">commented</span>
+                            <span className="font-semibold text-foreground">{activity.profiles?.name}</span>
+                            <span className="text-muted-foreground">added a comment</span>
                           </div>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{activity.comment}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(activity.created_at), 'MMM dd, HH:mm')}
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            {activity.comment}
+                          </p>
+                          <p className="text-xs text-muted-foreground/70 font-medium">
+                            {format(new Date(activity.created_at), 'MMM dd, h:mm a')}
                           </p>
                         </div>
                       </div>
